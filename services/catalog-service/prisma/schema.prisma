@@ -1,0 +1,137 @@
+// Catalog Service Database Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["catalog"]
+}
+
+// Products table
+model Product {
+    id          String   @id @default(uuid())
+    name        String
+    slug        String   @unique
+    description String?  @db.Text
+    price       Decimal  @db.Decimal(10, 2)
+    currency    String   @default("TRY")
+    sku         String?  @unique
+    image       String?  // Main product image URL
+    images      Json?    // Array of image URLs
+    categoryId  String?
+    brandId     String?
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relations
+    category      Category?      @relation(fields: [categoryId], references: [id])
+    brand         Brand?         @relation(fields: [brandId], references: [id])
+    variants      ProductVariant[]
+    productCategories ProductCategory[]
+    inventory     Inventory[]
+
+    @@map("products")
+    @@schema("catalog")
+    @@index([slug])
+    @@index([categoryId])
+    @@index([brandId])
+  }
+
+  // Product variants (color, size, etc.)
+  model ProductVariant {
+    id        String   @id @default(uuid())
+    productId String
+    name      String   // e.g., "Red", "Large", "XL"
+    type      String   // e.g., "color", "size"
+    sku       String?  @unique
+    price     Decimal? @db.Decimal(10, 2) // Optional price override
+    stock     Int      @default(0)
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@map("product_variants")
+    @@schema("catalog")
+    @@index([productId])
+  }
+
+  // Categories
+  model Category {
+    id          String   @id @default(uuid())
+    name        String
+    slug        String   @unique
+    description String?  @db.Text
+    parentId    String?
+    isActive    Boolean  @default(true)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    // Relations
+    parent   Category?          @relation("CategoryTree", fields: [parentId], references: [id])
+    children Category[]         @relation("CategoryTree")
+    products Product[]
+    productCategories ProductCategory[]
+
+    @@map("categories")
+    @@schema("catalog")
+    @@index([slug])
+    @@index([parentId])
+  }
+
+  // Product-Category many-to-many
+  model ProductCategory {
+    id         String   @id @default(uuid())
+    productId  String
+    categoryId String
+    createdAt  DateTime @default(now())
+
+    product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    @@unique([productId, categoryId])
+    @@map("product_categories")
+    @@schema("catalog")
+  }
+
+  // Brands
+  model Brand {
+    id        String   @id @default(uuid())
+    name      String
+    slug      String   @unique
+    logo      String?
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    products Product[]
+
+    @@map("brands")
+    @@schema("catalog")
+    @@index([slug])
+  }
+
+  // Inventory/Stock
+  model Inventory {
+    id        String   @id @default(uuid())
+    productId String
+    variantId String?
+    sku       String   @unique
+    quantity  Int      @default(0)
+    reserved  Int      @default(0) // Reserved for pending orders
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+    @@map("inventory")
+    @@schema("catalog")
+    @@index([productId])
+    @@index([sku])
+  }
+

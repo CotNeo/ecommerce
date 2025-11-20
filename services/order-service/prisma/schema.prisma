@@ -1,0 +1,86 @@
+// Order Service Database Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["orders"]
+}
+
+// Orders table
+model Order {
+    id               String      @id @default(uuid())
+    userId           String
+    status           OrderStatus @default(DRAFT)
+    totalAmount      Decimal     @db.Decimal(10, 2)
+    currency         String      @default("TRY")
+    shippingAddress  Json?       // Address JSON
+    billingAddress   Json?       // Address JSON
+    shippingCost     Decimal     @default(0) @db.Decimal(10, 2)
+    taxAmount        Decimal     @default(0) @db.Decimal(10, 2)
+    discountAmount   Decimal     @default(0) @db.Decimal(10, 2)
+    createdAt        DateTime    @default(now())
+    updatedAt        DateTime    @updatedAt
+
+    // Relations
+    items         OrderItem[]
+    statusHistory OrderStatusHistory[]
+
+    @@map("orders")
+    @@schema("orders")
+    @@index([userId])
+    @@index([status])
+    @@index([createdAt])
+  }
+
+  // Order items
+  model OrderItem {
+    id         String   @id @default(uuid())
+    orderId    String
+    productId  String
+    variantId  String?
+    sku        String
+    name       String
+    quantity   Int
+    unitPrice  Decimal  @db.Decimal(10, 2)
+    totalPrice Decimal  @db.Decimal(10, 2)
+    createdAt  DateTime @default(now())
+
+    order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    @@map("order_items")
+    @@schema("orders")
+    @@index([orderId])
+    @@index([productId])
+  }
+
+  // Order status history
+  model OrderStatusHistory {
+    id        String      @id @default(uuid())
+    orderId   String
+    status    OrderStatus
+    note      String?
+    createdAt DateTime    @default(now())
+
+    order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+    @@map("order_status_history")
+    @@schema("orders")
+    @@index([orderId])
+    @@index([createdAt])
+  }
+
+enum OrderStatus {
+  DRAFT
+  PENDING_PAYMENT
+  PAID
+  SHIPPED
+  COMPLETED
+  CANCELLED
+
+  @@schema("orders")
+}
+

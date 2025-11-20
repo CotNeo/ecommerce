@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && npm install && cd packages/shared-kernel && npm run build && cd ../shared-config && npm run build && cd ../../apps/web && npm run build",
+  "outputDirectory": "apps/web/.next",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "rootDirectory": "apps/web",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./apps/web",
+  "env": {
+    "AUTH_SERVICE_URL": "@auth_service_url",
+    "CATALOG_SERVICE_URL": "@catalog_service_url",
+    "CART_SERVICE_URL": "@cart_service_url",
+    "ORDER_SERVICE_URL": "@order_service_url",
+    "PAYMENT_SERVICE_URL": "@payment_service_url",
+    "NOTIFICATION_SERVICE_URL": "@notification_service_url"
+  }
+}
+

@@ -1,0 +1,51 @@
+// Cart Service Database Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["cart"]
+}
+
+// Carts table
+model Cart {
+    id         String     @id @default(uuid())
+    userId     String?
+    sessionId  String?
+    totalAmount Decimal   @default(0) @db.Decimal(10, 2)
+    currency   String     @default("TRY")
+    createdAt  DateTime   @default(now())
+    updatedAt  DateTime   @updatedAt
+
+    // Relations
+    items CartItem[]
+
+    @@map("carts")
+    @@schema("cart")
+    @@index([userId])
+    @@index([sessionId])
+  }
+
+  // Cart items
+  model CartItem {
+    id         String   @id @default(uuid())
+    cartId     String
+    productId  String
+    variantId  String?
+    quantity   Int
+    unitPrice  Decimal  @db.Decimal(10, 2)
+    totalPrice Decimal  @db.Decimal(10, 2)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+    @@map("cart_items")
+    @@schema("cart")
+    @@index([cartId])
+    @@index([productId])
+  }
+

@@ -1,0 +1,63 @@
+// Payment Service Database Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["payments"]
+}
+
+// Payment intents
+model PaymentIntent {
+    id                String        @id @default(uuid())
+    orderId           String
+    amount            Decimal       @db.Decimal(10, 2)
+    currency          String        @default("TRY")
+    status            PaymentStatus @default(PENDING)
+    provider          String        // "stripe", "iyzico", etc.
+    providerIntentId  String?       // Provider's payment intent ID
+    clientSecret      String?       // For Stripe
+    payUrl            String?       // For Iyzico/PayTR
+    metadata          Json?         // Additional provider-specific data
+    createdAt         DateTime      @default(now())
+    updatedAt         DateTime      @updatedAt
+
+    // Relations
+    logs PaymentLog[]
+
+    @@map("payment_intents")
+    @@schema("payments")
+    @@index([orderId])
+    @@index([providerIntentId])
+    @@index([status])
+  }
+
+  // Payment logs
+  model PaymentLog {
+    id              String   @id @default(uuid())
+    paymentIntentId String
+    event           String   // "created", "succeeded", "failed", etc.
+    message         String?
+    metadata        Json?
+    createdAt       DateTime @default(now())
+
+    paymentIntent PaymentIntent @relation(fields: [paymentIntentId], references: [id], onDelete: Cascade)
+
+    @@map("payment_logs")
+    @@schema("payments")
+    @@index([paymentIntentId])
+    @@index([createdAt])
+  }
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELLED
+
+  @@schema("payments")
+}
+

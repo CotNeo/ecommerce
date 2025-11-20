@@ -1,0 +1,75 @@
+// Auth Service Database Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["auth"]
+}
+
+// Users table
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  addresses     UserAddress[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+  @@schema("auth")
+}
+
+// User addresses
+model UserAddress {
+  id          String   @id @default(uuid())
+  userId      String
+  firstName   String
+  lastName    String
+  addressLine1 String
+  addressLine2 String?
+  city        String
+  state       String?
+  postalCode  String
+  country     String   @default("TR")
+  phone       String?
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_addresses")
+  @@schema("auth")
+}
+
+// Refresh tokens
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+  @@schema("auth")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+
+  @@schema("auth")
+}
+

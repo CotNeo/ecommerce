@@ -1,0 +1,55 @@
+// Notification Service Database Schema
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["notifications"]
+}
+
+// Notification templates
+model NotificationTemplate {
+    id        String   @id @default(uuid())
+    name      String   @unique // e.g., "order_created", "order_paid"
+    type      String   // "email", "sms", "push"
+    subject   String?  // For email
+    body      String   @db.Text
+    variables Json?    // Available variables for template
+    isActive  Boolean  @default(true)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    logs NotificationLog[]
+
+    @@map("notification_templates")
+    @@schema("notifications")
+    @@index([name])
+  }
+
+  // Notification logs
+  model NotificationLog {
+    id         String   @id @default(uuid())
+    templateId String?
+    type       String   // "email", "sms", "push"
+    recipient  String   // email, phone, or user ID
+    subject    String?
+    body       String   @db.Text
+    status     String   // "sent", "failed", "pending"
+    error      String?  @db.Text
+    metadata   Json?
+    createdAt  DateTime @default(now())
+
+    template NotificationTemplate? @relation(fields: [templateId], references: [id])
+
+    @@map("notification_logs")
+    @@schema("notifications")
+    @@index([templateId])
+    @@index([recipient])
+    @@index([status])
+    @@index([createdAt])
+  }
+
