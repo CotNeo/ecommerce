@@ -66,7 +66,7 @@ export class ProductRepositoryImpl implements IProductRepository {
       });
 
       console.log('[ProductRepository] Found products:', products.length);
-      return products.map((p) => this.mapToDomain(p));
+      return products.map((p: any) => this.mapToDomain(p));
     } catch (error) {
       console.error('[ProductRepository] Error finding products:', error);
       throw error;

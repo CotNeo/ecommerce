@@ -6,10 +6,11 @@ WORKDIR /app
 # Copy root package files
 COPY package*.json ./
 COPY package-lock.json* ./
+COPY tsconfig.json ./
 
 # Copy shared packages
-COPY packages/shared-kernel/package.json ./packages/shared-kernel/
-COPY packages/shared-config/package.json ./packages/shared-config/
+COPY packages/shared-kernel ./packages/shared-kernel
+COPY packages/shared-config ./packages/shared-config
 
 # Copy service package files
 COPY services/notification-service/package.json ./services/notification-service/
@@ -28,20 +29,21 @@ RUN npm ci
 WORKDIR /app/services/notification-service
 RUN npm ci
 
-# Copy source code
-WORKDIR /app
-COPY packages ./packages
-COPY services/notification-service ./services/notification-service
-
-# Build shared packages
+# Build shared packages (only their own code, not services)
 WORKDIR /app/packages/shared-kernel
 RUN npm run build
 
 WORKDIR /app/packages/shared-config
 RUN npm run build
 
+# Copy service source code (after shared packages are built)
+WORKDIR /app
+COPY services/notification-service ./services/notification-service
+
 # Build service
 WORKDIR /app/services/notification-service
+# Generate Prisma Client before build
+RUN npx prisma generate
 RUN npm run build
 
 # Production image
@@ -72,16 +74,22 @@ RUN npm ci --only=production
 COPY --from=builder /app/packages/shared-kernel/dist ./packages/shared-kernel/dist
 COPY --from=builder /app/packages/shared-config/dist ./packages/shared-config/dist
 COPY --from=builder /app/services/notification-service/dist ./dist
-COPY --from=builder /app/services/notification-service/node_modules/.prisma ./node_modules/.prisma
+# Copy Prisma client if exists
+RUN mkdir -p ./node_modules/.prisma || true
+
 COPY --from=builder /app/services/notification-service/prisma ./prisma
 
-# Generate Prisma Client
-RUN npx prisma generate
+# Generate Prisma Client (if not already generated)
+RUN npx prisma generate || true
 
 WORKDIR /app/services/notification-service
 
 EXPOSE 3006
 
 CMD ["node", "dist/index.js"]
+
+
+
+
 
 

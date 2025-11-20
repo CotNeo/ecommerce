@@ -39,6 +39,7 @@ COPY --from=deps /app/packages ./packages
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 
 # Copy source code
+COPY tsconfig.json ./
 COPY packages ./packages
 COPY apps/web ./apps/web
 

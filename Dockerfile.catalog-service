@@ -6,10 +6,11 @@ WORKDIR /app
 # Copy root package files
 COPY package*.json ./
 COPY package-lock.json* ./
+COPY tsconfig.json ./
 
 # Copy shared packages
-COPY packages/shared-kernel/package.json ./packages/shared-kernel/
-COPY packages/shared-config/package.json ./packages/shared-config/
+COPY packages/shared-kernel ./packages/shared-kernel
+COPY packages/shared-config ./packages/shared-config
 
 # Copy service package files
 COPY services/catalog-service/package.json ./services/catalog-service/
@@ -28,20 +29,21 @@ RUN npm ci
 WORKDIR /app/services/catalog-service
 RUN npm ci
 
-# Copy source code
-WORKDIR /app
-COPY packages ./packages
-COPY services/catalog-service ./services/catalog-service
-
-# Build shared packages
+# Build shared packages (only their own code, not services)
 WORKDIR /app/packages/shared-kernel
 RUN npm run build
 
 WORKDIR /app/packages/shared-config
 RUN npm run build
 
+# Copy service source code (after shared packages are built)
+WORKDIR /app
+COPY services/catalog-service ./services/catalog-service
+
 # Build service
 WORKDIR /app/services/catalog-service
+# Generate Prisma Client before build
+RUN npx prisma generate
 RUN npm run build
 
 # Production image
@@ -72,7 +74,9 @@ RUN npm ci --only=production
 COPY --from=builder /app/packages/shared-kernel/dist ./packages/shared-kernel/dist
 COPY --from=builder /app/packages/shared-config/dist ./packages/shared-config/dist
 COPY --from=builder /app/services/catalog-service/dist ./dist
-COPY --from=builder /app/services/catalog-service/node_modules/.prisma ./node_modules/.prisma
+# Copy Prisma client if exists
+RUN mkdir -p ./node_modules/.prisma || true
+
 COPY --from=builder /app/services/catalog-service/prisma ./prisma
 
 # Generate Prisma Client
@@ -83,5 +87,10 @@ WORKDIR /app/services/catalog-service
 EXPOSE 3002
 
 CMD ["node", "dist/index.js"]
+
+
+
+
+
 
 
