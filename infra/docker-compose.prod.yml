@@ -25,7 +25,7 @@ services:
   auth-service:
     build:
       context: ..
-      dockerfile: services/auth-service/Dockerfile
+      dockerfile: Dockerfile.auth-service
     container_name: ecommerce-auth-service
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce}?schema=auth
@@ -46,7 +46,7 @@ services:
   catalog-service:
     build:
       context: ..
-      dockerfile: services/catalog-service/Dockerfile
+      dockerfile: Dockerfile.catalog-service
     container_name: ecommerce-catalog-service
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce}?schema=catalog
@@ -65,7 +65,7 @@ services:
   cart-service:
     build:
       context: ..
-      dockerfile: services/cart-service/Dockerfile
+      dockerfile: Dockerfile.cart-service
     container_name: ecommerce-cart-service
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce}?schema=cart
@@ -85,7 +85,7 @@ services:
   order-service:
     build:
       context: ..
-      dockerfile: services/order-service/Dockerfile
+      dockerfile: Dockerfile.order-service
     container_name: ecommerce-order-service
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce}?schema=orders
@@ -109,7 +109,7 @@ services:
   payment-service:
     build:
       context: ..
-      dockerfile: services/payment-service/Dockerfile
+      dockerfile: Dockerfile.payment-service
     container_name: ecommerce-payment-service
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce}?schema=payments
@@ -131,7 +131,7 @@ services:
   notification-service:
     build:
       context: ..
-      dockerfile: services/notification-service/Dockerfile
+      dockerfile: Dockerfile.notification-service
     container_name: ecommerce-notification-service
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-ecommerce}?schema=notifications
@@ -154,7 +154,7 @@ services:
   web:
     build:
       context: ..
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile.web
     container_name: ecommerce-web
     environment:
       AUTH_SERVICE_URL: http://auth-service:3001
@@ -184,4 +184,3 @@ volumes:
 networks:
   ecommerce-network:
     driver: bridge
-

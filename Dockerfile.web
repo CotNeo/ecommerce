@@ -1,0 +1,74 @@
+# Frontend Dockerfile
+FROM node:18-alpine AS deps
+
+WORKDIR /app
+
+# Copy root package files
+COPY package*.json ./
+COPY package-lock.json* ./
+
+# Copy shared packages
+COPY packages/shared-kernel/package.json ./packages/shared-kernel/
+COPY packages/shared-config/package.json ./packages/shared-config/
+
+# Copy app package files
+COPY apps/web/package.json ./apps/web/
+
+# Install root dependencies
+RUN npm ci
+
+# Install shared packages dependencies
+WORKDIR /app/packages/shared-kernel
+RUN npm ci
+
+WORKDIR /app/packages/shared-config
+RUN npm ci
+
+# Install app dependencies
+WORKDIR /app/apps/web
+RUN npm ci
+
+# Build stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy dependencies
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages ./packages
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
+
+# Copy source code
+COPY packages ./packages
+COPY apps/web ./apps/web
+
+# Build shared packages
+WORKDIR /app/packages/shared-kernel
+RUN npm run build
+
+WORKDIR /app/packages/shared-config
+RUN npm run build
+
+# Build frontend
+WORKDIR /app/apps/web
+RUN npm run build
+
+# Production image
+FROM node:18-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV production
+
+# Copy built files
+COPY --from=builder /app/apps/web/public ./public
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./.next/static
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+CMD ["node", "server.js"]
+

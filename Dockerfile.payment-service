@@ -1,0 +1,87 @@
+# Auth Service Dockerfile
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy root package files
+COPY package*.json ./
+COPY package-lock.json* ./
+
+# Copy shared packages
+COPY packages/shared-kernel/package.json ./packages/shared-kernel/
+COPY packages/shared-config/package.json ./packages/shared-config/
+
+# Copy service package files
+COPY services/payment-service/package.json ./services/payment-service/
+
+# Install root dependencies
+RUN npm ci
+
+# Install shared packages dependencies
+WORKDIR /app/packages/shared-kernel
+RUN npm ci
+
+WORKDIR /app/packages/shared-config
+RUN npm ci
+
+# Install service dependencies
+WORKDIR /app/services/payment-service
+RUN npm ci
+
+# Copy source code
+WORKDIR /app
+COPY packages ./packages
+COPY services/payment-service ./services/payment-service
+
+# Build shared packages
+WORKDIR /app/packages/shared-kernel
+RUN npm run build
+
+WORKDIR /app/packages/shared-config
+RUN npm run build
+
+# Build service
+WORKDIR /app/services/payment-service
+RUN npm run build
+
+# Production image
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY package-lock.json* ./
+COPY packages/shared-kernel/package.json ./packages/shared-kernel/
+COPY packages/shared-config/package.json ./packages/shared-config/
+COPY services/payment-service/package.json ./services/payment-service/
+
+# Install production dependencies
+RUN npm ci --only=production
+
+WORKDIR /app/packages/shared-kernel
+RUN npm ci --only=production
+
+WORKDIR /app/packages/shared-config
+RUN npm ci --only=production
+
+WORKDIR /app/services/payment-service
+RUN npm ci --only=production
+
+# Copy built files
+COPY --from=builder /app/packages/shared-kernel/dist ./packages/shared-kernel/dist
+COPY --from=builder /app/packages/shared-config/dist ./packages/shared-config/dist
+COPY --from=builder /app/services/payment-service/dist ./dist
+COPY --from=builder /app/services/payment-service/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/services/payment-service/prisma ./prisma
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+WORKDIR /app/services/payment-service
+
+EXPOSE 3005
+
+CMD ["node", "dist/index.js"]
+
+
