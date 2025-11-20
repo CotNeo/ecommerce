@@ -48,3 +48,7 @@ apps/web/public/uploads/*
 # Vercel
 .vercel
 
+# Docker
+.env.prod
+.env.production
+
