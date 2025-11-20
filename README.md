@@ -301,6 +301,9 @@ npm run build
 
 - **Mimari Dokümantasyon:** `ARCHITECTURE.md`
 - **Veritabanı Kurulum:** `DATABASE_SETUP.md`
+- **Deployment Rehberi:** `DEPLOYMENT.md`
+- **Backend Deployment:** `BACKEND_DEPLOYMENT.md` ⭐ (URL'lerin nasıl alınacağı)
+- **Vercel Setup:** `VERCEL_SETUP.md`
 - **API Dokümantasyonu:** Her servis için `README.md` (gelecek)
 
 ## 🛠️ Geliştirme Araçları
